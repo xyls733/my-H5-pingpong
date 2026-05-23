@@ -1,0 +1,581 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2024-01-01",
+  "description": "乒乓球标准动作参数库，包含正手、反手、拉球、搓球、发球等基础动作的标准参数",
+  "actions": {
+    "forehand": {
+      "id": "forehand",
+      "name": "正手",
+      "nameEn": "Forehand",
+      "description": "正手攻球是最基本的乒乓球技术动作之一",
+      "difficulty": "beginner",
+      "jointAngles": {
+        "elbow": {
+          "min": 70,
+          "max": 110,
+          "optimal": 90,
+          "description": "肘部弯曲角度，影响发力效果"
+        },
+        "shoulder": {
+          "min": 30,
+          "max": 60,
+          "optimal": 45,
+          "description": "肩部转动角度，影响动作幅度"
+        },
+        "wrist": {
+          "min": 150,
+          "max": 180,
+          "optimal": 165,
+          "description": "手腕角度，影响球拍控制"
+        },
+        "hip": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "description": "髋部角度，影响身体稳定性"
+        },
+        "knee": {
+          "min": 100,
+          "max": 140,
+          "optimal": 120,
+          "description": "膝盖弯曲角度，影响重心控制"
+        }
+      },
+      "sequence": [
+        {
+          "phase": "prepare",
+          "name": "准备姿势",
+          "duration": 0.2,
+          "keyPoints": [
+            "双脚分开与肩同宽",
+            "膝盖微屈",
+            "身体重心略微前倾",
+            "球拍置于身体前方"
+          ]
+        },
+        {
+          "phase": "backswing",
+          "name": "引拍",
+          "duration": 0.3,
+          "keyPoints": [
+            "向右转体",
+            "手臂向后摆动",
+            "重心转移到右脚",
+            "球拍低于来球"
+          ]
+        },
+        {
+          "phase": "forward",
+          "name": "挥拍击球",
+          "duration": 0.3,
+          "keyPoints": [
+            "向左转体带动手臂",
+            "重心转移到左脚",
+            "在身体前方击球",
+            "击球点在腰部高度"
+          ]
+        },
+        {
+          "phase": "followthrough",
+          "name": "随挥",
+          "duration": 0.2,
+          "keyPoints": [
+            "手臂继续向前上方挥动",
+            "身体完全转正",
+            "恢复准备姿势"
+          ]
+        }
+      ],
+      "scoringWeights": {
+        "posture": 0.4,
+        "continuity": 0.3,
+        "power": 0.2,
+        "completeness": 0.1
+      }
+    },
+    "backhand": {
+      "id": "backhand",
+      "name": "反手",
+      "nameEn": "Backhand",
+      "description": "反手攻球是应对左侧来球的重要技术",
+      "difficulty": "beginner",
+      "jointAngles": {
+        "elbow": {
+          "min": 60,
+          "max": 90,
+          "optimal": 75,
+          "description": "肘部弯曲角度，反手肘部更贴近身体"
+        },
+        "shoulder": {
+          "min": 20,
+          "max": 50,
+          "optimal": 35,
+          "description": "肩部转动角度，反手转动幅度较小"
+        },
+        "wrist": {
+          "min": 120,
+          "max": 160,
+          "optimal": 140,
+          "description": "手腕角度，反手手腕角度更小"
+        },
+        "hip": {
+          "min": 70,
+          "max": 110,
+          "optimal": 90,
+          "description": "髋部角度，身体转动幅度较小"
+        },
+        "knee": {
+          "min": 90,
+          "max": 130,
+          "optimal": 110,
+          "description": "膝盖弯曲角度"
+        }
+      },
+      "sequence": [
+        {
+          "phase": "prepare",
+          "name": "准备姿势",
+          "duration": 0.2,
+          "keyPoints": [
+            "双脚分开与肩同宽",
+            "膝盖微屈",
+            "身体重心略微前倾",
+            "球拍置于身体左侧"
+          ]
+        },
+        {
+          "phase": "backswing",
+          "name": "引拍",
+          "duration": 0.3,
+          "keyPoints": [
+            "向左转体",
+            "手臂向左后方摆动",
+            "肘部贴近身体",
+            "重心转移到左脚"
+          ]
+        },
+        {
+          "phase": "forward",
+          "name": "挥拍击球",
+          "duration": 0.3,
+          "keyPoints": [
+            "向右转体带动手臂",
+            "重心转移到右脚",
+            "在身体前方击球",
+            "击球点在腰部高度"
+          ]
+        },
+        {
+          "phase": "followthrough",
+          "name": "随挥",
+          "duration": 0.2,
+          "keyPoints": [
+            "手臂继续向右前方挥动",
+            "身体恢复正对球台",
+            "恢复准备姿势"
+          ]
+        }
+      ],
+      "scoringWeights": {
+        "posture": 0.4,
+        "continuity": 0.3,
+        "power": 0.2,
+        "completeness": 0.1
+      }
+    },
+    "loop": {
+      "id": "loop",
+      "name": "拉球",
+      "nameEn": "Loop",
+      "description": "拉球是产生强烈上旋的技术动作",
+      "difficulty": "intermediate",
+      "jointAngles": {
+        "elbow": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "description": "肘部弯曲角度，拉球时肘部角度较大"
+        },
+        "shoulder": {
+          "min": 40,
+          "max": 70,
+          "optimal": 55,
+          "description": "肩部转动角度，拉球需要更大的转动幅度"
+        },
+        "wrist": {
+          "min": 140,
+          "max": 175,
+          "optimal": 160,
+          "description": "手腕角度，拉球时手腕需要更大的活动范围"
+        },
+        "hip": {
+          "min": 85,
+          "max": 125,
+          "optimal": 105,
+          "description": "髋部角度，身体转动幅度更大"
+        },
+        "knee": {
+          "min": 105,
+          "max": 145,
+          "optimal": 125,
+          "description": "膝盖弯曲角度，拉球时膝盖弯曲更深"
+        }
+      },
+      "sequence": [
+        {
+          "phase": "prepare",
+          "name": "准备姿势",
+          "duration": 0.15,
+          "keyPoints": [
+            "双脚分开略宽于肩",
+            "膝盖深度弯曲",
+            "身体重心降低",
+            "球拍置于身体后方低位"
+          ]
+        },
+        {
+          "phase": "backswing",
+          "name": "引拍",
+          "duration": 0.35,
+          "keyPoints": [
+            "大幅向后转体",
+            "手臂向后下方摆动",
+            "重心完全转移到后脚",
+            "球拍降至最低点"
+          ]
+        },
+        {
+          "phase": "forward",
+          "name": "挥拍击球",
+          "duration": 0.35,
+          "keyPoints": [
+            "快速向前上方转体",
+            "重心快速转移到前脚",
+            "手臂向上前方挥动",
+            "在下降期击球"
+          ]
+        },
+        {
+          "phase": "followthrough",
+          "name": "随挥",
+          "duration": 0.15,
+          "keyPoints": [
+            "手臂向上前方充分伸展",
+            "身体完全转正",
+            "球拍挥至头部上方"
+          ]
+        }
+      ],
+      "scoringWeights": {
+        "posture": 0.35,
+        "continuity": 0.35,
+        "power": 0.25,
+        "completeness": 0.05
+      }
+    },
+    "push": {
+      "id": "push",
+      "name": "搓球",
+      "nameEn": "Push",
+      "description": "搓球是产生下旋的防守性技术",
+      "difficulty": "intermediate",
+      "jointAngles": {
+        "elbow": {
+          "min": 90,
+          "max": 130,
+          "optimal": 110,
+          "description": "肘部弯曲角度，搓球时肘部角度较大"
+        },
+        "shoulder": {
+          "min": 25,
+          "max": 55,
+          "optimal": 40,
+          "description": "肩部转动角度，搓球转动幅度适中"
+        },
+        "wrist": {
+          "min": 130,
+          "max": 170,
+          "optimal": 150,
+          "description": "手腕角度，搓球时手腕角度适中"
+        },
+        "hip": {
+          "min": 75,
+          "max": 115,
+          "optimal": 95,
+          "description": "髋部角度，身体转动幅度较小"
+        },
+        "knee": {
+          "min": 95,
+          "max": 135,
+          "optimal": 115,
+          "description": "膝盖弯曲角度"
+        }
+      },
+      "sequence": [
+        {
+          "phase": "prepare",
+          "name": "准备姿势",
+          "duration": 0.4,
+          "keyPoints": [
+            "双脚分开与肩同宽",
+            "膝盖微屈",
+            "身体重心略微前倾",
+            "球拍置于身体前方"
+          ]
+        },
+        {
+          "phase": "contact",
+          "name": "接触球",
+          "duration": 0.3,
+          "keyPoints": [
+            "向前下方挥拍",
+            "在球上升期接触",
+            "拍面略微后仰",
+            "摩擦球的底部"
+          ]
+        },
+        {
+          "phase": "followthrough",
+          "name": "随挥",
+          "duration": 0.3,
+          "keyPoints": [
+            "手臂继续向前下方挥动",
+            "动作幅度较小",
+            "快速恢复准备姿势"
+          ]
+        }
+      ],
+      "scoringWeights": {
+        "posture": 0.45,
+        "continuity": 0.25,
+        "power": 0.15,
+        "completeness": 0.15
+      }
+    },
+    "serve": {
+      "id": "serve",
+      "name": "发球",
+      "nameEn": "Serve",
+      "description": "发球是比赛的开始，也是重要的得分手段",
+      "difficulty": "advanced",
+      "jointAngles": {
+        "elbow": {
+          "min": 75,
+          "max": 115,
+          "optimal": 95,
+          "description": "肘部弯曲角度"
+        },
+        "shoulder": {
+          "min": 35,
+          "max": 65,
+          "optimal": 50,
+          "description": "肩部转动角度"
+        },
+        "wrist": {
+          "min": 145,
+          "max": 180,
+          "optimal": 165,
+          "description": "手腕角度，发球时手腕活动范围大"
+        },
+        "hip": {
+          "min": 80,
+          "max": 120,
+          "optimal": 100,
+          "description": "髋部角度"
+        },
+        "knee": {
+          "min": 100,
+          "max": 140,
+          "optimal": 120,
+          "description": "膝盖弯曲角度"
+        }
+      },
+      "sequence": [
+        {
+          "phase": "toss",
+          "name": "抛球",
+          "duration": 0.2,
+          "keyPoints": [
+            "将球垂直向上抛起",
+            "抛球高度适中",
+            "抛球位置稳定",
+            "眼睛注视球的上升"
+          ]
+        },
+        {
+          "phase": "backswing",
+          "name": "引拍",
+          "duration": 0.3,
+          "keyPoints": [
+            "向后转体",
+            "手臂向后摆动",
+            "重心转移到后脚",
+            "准备发力"
+          ]
+        },
+        {
+          "phase": "contact",
+          "name": "击球",
+          "duration": 0.3,
+          "keyPoints": [
+            "在球下落时击球",
+            "击球点高度准确",
+            "拍面角度正确",
+            "发力时机准确"
+          ]
+        },
+        {
+          "phase": "followthrough",
+          "name": "随挥",
+          "duration": 0.2,
+          "keyPoints": [
+            "手臂自然随挥",
+            "身体恢复平衡",
+            "准备接发球"
+          ]
+        }
+      ],
+      "scoringWeights": {
+        "posture": 0.3,
+        "continuity": 0.3,
+        "power": 0.25,
+        "completeness": 0.15
+      }
+    }
+  },
+  "commonIssues": {
+    "posture": [
+      {
+        "issue": "肘部角度过小",
+        "severity": "low",
+        "description": "肘部弯曲角度不足，影响发力效果",
+        "suggestion": "适当增大肘部弯曲角度，保持大臂与身体夹角在合理范围内"
+      },
+      {
+        "issue": "肩部活动范围不足",
+        "severity": "low",
+        "description": "肩部转动幅度不够，影响动作完整性",
+        "suggestion": "增加肩部转动幅度，充分利用身体转动来增强击球力量"
+      },
+      {
+        "issue": "身体重心过高",
+        "severity": "medium",
+        "description": "膝盖弯曲不够，身体重心过高影响稳定性",
+        "suggestion": "适当降低身体重心，增加膝盖弯曲角度，提高动作稳定性"
+      }
+    ],
+    "continuity": [
+      {
+        "issue": "动作连贯性差",
+        "severity": "medium",
+        "description": "动作过程中存在停顿或不流畅现象",
+        "suggestion": "练习动作的连贯性，避免在动作过程中出现停顿，保持流畅的动作节奏"
+      },
+      {
+        "issue": "动作节奏不稳定",
+        "severity": "low",
+        "description": "动作速度忽快忽慢，影响击球质量",
+        "suggestion": "保持稳定的动作节奏，通过反复练习建立肌肉记忆"
+      }
+    ],
+    "power": [
+      {
+        "issue": "发力不合理",
+        "severity": "medium",
+        "description": "发力时机或发力方式需要改进",
+        "suggestion": "掌握正确的发力时机，在球拍接触球的瞬间发力，利用身体转动带动手臂"
+      },
+      {
+        "issue": "发力不充分",
+        "severity": "low",
+        "description": "动作力量不足，影响击球效果",
+        "suggestion": "增加身体转动的幅度，充分利用腰腹力量，提高击球力量"
+      }
+    ],
+    "completeness": [
+      {
+        "issue": "动作不完整",
+        "severity": "medium",
+        "description": "动作缺少某些阶段，影响整体效果",
+        "suggestion": "确保完成动作的所有阶段，特别是准备姿势和随挥动作"
+      },
+      {
+        "issue": "随挥不充分",
+        "severity": "low",
+        "description": "击球后随挥动作不完整，影响动作连贯性",
+        "suggestion": "注意击球后的随挥动作，确保动作完整流畅"
+      }
+    ]
+  },
+  "scoringLevels": {
+    "excellent": {
+      "min": 90,
+      "max": 100,
+      "description": "优秀",
+      "color": "#4CAF50"
+    },
+    "good": {
+      "min": 80,
+      "max": 89.9,
+      "description": "良好",
+      "color": "#8BC34A"
+    },
+    "medium": {
+      "min": 70,
+      "max": 79.9,
+      "description": "中等",
+      "color": "#FF9800"
+    },
+    "pass": {
+      "min": 60,
+      "max": 69.9,
+      "description": "及格",
+      "color": "#FFC107"
+    },
+    "improve": {
+      "min": 0,
+      "max": 59.9,
+      "description": "需改进",
+      "color": "#F44336"
+    }
+  },
+  "technicalTips": {
+    "general": [
+      "保持正确的准备姿势，双脚分开与肩同宽",
+      "膝盖微屈，身体重心略微前倾",
+      "眼睛始终注视球的运动轨迹",
+      "保持放松，避免肌肉过度紧张",
+      "通过身体转动带动手臂，而不是单纯依靠手臂力量"
+    ],
+    "forehand": [
+      "正手攻球时要充分利用身体转动",
+      "击球点要在身体前方，腰部高度",
+      "注意随挥动作的完整性",
+      "保持动作的连贯性和节奏感"
+    ],
+    "backhand": [
+      "反手时肘部要贴近身体",
+      "转动幅度相对较小，但要快速",
+      "注意手腕的控制和发力",
+      "击球点同样要在身体前方"
+    ],
+    "loop": [
+      "拉球时要降低重心，膝盖深度弯曲",
+      "引拍幅度要大，为发力创造空间",
+      "击球时要向前上方发力，制造上旋",
+      "随挥要充分，手臂伸展到头部上方"
+    ],
+    "push": [
+      "搓球时拍面要略微后仰",
+      "向前下方发力，摩擦球的底部",
+      "动作幅度不宜过大",
+      "注意控制球的落点和旋转"
+    ],
+    "serve": [
+      "抛球要垂直向上，高度适中",
+      "注意抛球的稳定性",
+      "击球时机要准确，在球下落时击球",
+      "发球后要迅速恢复准备姿势"
+    ]
+  }
+}

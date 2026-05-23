@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#667eea">
+    <title>乒乓球AI动作分析助手</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="app-title">乒乓球AI动作分析助手</h1>
+            <div class="header-controls">
+                <button id="uploadBtn" class="btn btn-primary">上传视频</button>
+                <button id="cameraBtn" class="btn btn-primary">开始摄像</button>
+                <button id="uploadStandardBtn" class="btn btn-info">上传标准视频</button>
+                <button id="analyzeBtn" class="btn btn-success" disabled>分析动作</button>
+                <button id="exportBtn" class="btn btn-secondary" disabled>导出报告</button>
+                <button id="exportVideoBtn" class="btn btn-warning" disabled>导出分析视频</button>
+            </div>
+        </div>
+        <input type="file" id="videoInput" accept="video/mp4,video/webm,video/ogg" style="display: none;">
+        <input type="file" id="standardVideoInput" accept="video/mp4,video/webm,video/ogg" style="display: none;">
+        <input type="hidden" id="skipGuide" value="false">
+    </header>
+
+    <main class="main-content">
+        <div class="video-section">
+            <div class="video-container-wrapper">
+                <div class="video-container standard-video">
+                    <div class="video-label">📹 标准视频</div>
+                    <video id="standardVideoPlayer" class="video-player" playsinline></video>
+                    <canvas id="standardPoseCanvas" class="pose-overlay"></canvas>
+                    <button id="standardFullscreenBtn" class="fullscreen-btn" title="全屏">⛶</button>
+                    <div class="loading-overlay" id="standardLoadingOverlay">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">正在分析标准视频...</p>
+                        <div class="progress-container-overlay">
+                            <div class="progress-bar-overlay">
+                                <div id="standardProgress" class="progress-fill"></div>
+                            </div>
+                            <span id="standardProgressText" class="progress-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="video-container user-video">
+                    <div class="video-label">🎯 我的视频</div>
+                    <video id="videoPlayer" class="video-player" playsinline></video>
+                    <canvas id="poseCanvas" class="pose-overlay"></canvas>
+                    <button id="fullscreenBtn" class="fullscreen-btn" title="全屏">⛶</button>
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-spinner"></div>
+                        <p class="loading-text">正在分析...</p>
+                        <div class="progress-container-overlay">
+                            <div class="progress-bar-overlay">
+                                <div id="analysisProgress" class="progress-fill"></div>
+                            </div>
+                            <span id="progressText" class="progress-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="video-controls">
+                <div class="video-info">
+                    <div class="info-item">
+                        <span class="info-label">动作类型:</span>
+                        <select id="actionTypeSelect" class="action-select">
+                            <option value="">请选择动作类型</option>
+                            <optgroup label="正手动作">
+                                <option value="forehand">正手攻球</option>
+                                <option value="forehandLoop">正手拉球</option>
+                                <option value="forehandFlick">正手挑打</option>
+                            </optgroup>
+                            <optgroup label="反手动作">
+                                <option value="backhand">反手攻球</option>
+                                <option value="backhandLoop">反手拉球</option>
+                                <option value="backhandFlick">反手撕球</option>
+                                <option value="backhandTwist">反手拧拉</option>
+                                <option value="block">反手挡球</option>
+                            </optgroup>
+                            <optgroup label="其他动作">
+                                <option value="push">搓球</option>
+                                <option value="chop">削球</option>
+                                <option value="serve">发球</option>
+                                <option value="serveForehand">正手发球</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">摄像头位置:</span>
+                        <select id="cameraPositionSelect" class="action-select">
+                            <option value="front">正面</option>
+                            <option value="side">侧面</option>
+                            <option value="back">背面</option>
+                            <option value="diagonal">斜侧</option>
+                        </select>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">置信度:</span>
+                        <span id="confidence" class="info-value">--</span>
+                    </div>
+                </div>
+                <div class="angle-legend">
+                    <div class="legend-title">🎯 角度图例说明</div>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #00BFFF;"></span>
+                            <span>肘部角度</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #FF6B6B;"></span>
+                            <span>肩部角度</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #98D8C8;"></span>
+                            <span>髋/膝角度</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #FFD93D;"></span>
+                            <span>运动速度</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="showAngleGuideBtn" class="btn btn-outline btn-sm angle-guide-btn">📚 角度技术说明</button>
+            </div>
+        </div>
+
+        <div class="analysis-section">
+            <div class="analysis-grid">
+                <div class="score-card">
+                    <h2 class="card-title">🏆 综合评分</h2>
+                    <div class="score-display">
+                        <span id="totalScore" class="score-value">--</span>
+                        <span class="score-max">/100</span>
+                    </div>
+                    <div id="scoreLevel" class="score-level">--</div>
+                    <div class="score-stars" id="scoreStars">★★★★★</div>
+                </div>
+
+                <div class="detail-scores">
+                    <h3 class="card-title">📊 详细评分</h3>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span class="score-label">姿态规范性</span>
+                            <div class="score-bar">
+                                <div id="postureScore" class="score-fill" style="width: 0%"></div>
+                            </div>
+                            <span id="postureValue" class="score-number">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">动作连贯性</span>
+                            <div class="score-bar">
+                                <div id="continuityScore" class="score-fill" style="width: 0%"></div>
+                            </div>
+                            <span id="continuityValue" class="score-number">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">发力合理性</span>
+                            <div class="score-bar">
+                                <div id="powerScore" class="score-fill" style="width: 0%"></div>
+                            </div>
+                            <span id="powerValue" class="score-number">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">动作完整性</span>
+                            <div class="score-bar">
+                                <div id="completenessScore" class="score-fill" style="width: 0%"></div>
+                            </div>
+                            <span id="completenessValue" class="score-number">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <h3 class="card-title">📈 数据分析统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">分析帧数</span>
+                        <span id="frameCount" class="stat-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">关键帧数</span>
+                        <span id="keyFrameCount" class="stat-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">平均肘部角度</span>
+                        <span id="avgElbowAngle" class="stat-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">平均肩部角度</span>
+                        <span id="avgShoulderAngle" class="stat-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">平均运动速度</span>
+                        <span id="avgSpeed" class="stat-value">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">最大运动速度</span>
+                        <span id="maxSpeed" class="stat-value">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <h3 class="card-title">📊 数据曲线看板</h3>
+                <div class="charts-tabs">
+                    <button class="chart-tab active" data-chart="elbow">肘部角度</button>
+                    <button class="chart-tab" data-chart="shoulder">肩部角度</button>
+                    <button class="chart-tab" data-chart="wrist">腕部角度</button>
+                    <button class="chart-tab" data-chart="hip">髋部角度</button>
+                    <button class="chart-tab" data-chart="knee">膝部角度</button>
+                    <button class="chart-tab" data-chart="speed">运动速度</button>
+                </div>
+                <div class="chart-header">
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #667eea;"></span>
+                            <span>实际值</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #48bb78; opacity: 0.5;"></span>
+                            <span>标准范围</span>
+                        </div>
+                    </div>
+                    <div class="chart-stats">
+                        <div class="stats-group user-stats">
+                            <span class="stats-label">用户视频</span>
+                            <span>均值: <span id="userMean">--</span></span>
+                            <span>峰值: <span id="userMax">--</span></span>
+                            <span>谷值: <span id="userMin">--</span></span>
+                        </div>
+                        <div class="stats-group standard-stats" id="standardStats" style="display: none;">
+                            <span class="stats-label">标准视频</span>
+                            <span>均值: <span id="standardMean">--</span></span>
+                            <span>峰值: <span id="standardMax">--</span></span>
+                            <span>谷值: <span id="standardMin">--</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-controls">
+                    <button id="zoomOutBtn" class="zoom-btn" title="缩小">−</button>
+                    <span id="zoomLevel">100%</span>
+                    <button id="zoomInBtn" class="zoom-btn" title="放大">+</button>
+                    <button id="resetZoomBtn" class="zoom-btn" title="重置">⟲</button>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-scroll-wrapper">
+                        <canvas id="dataChart" class="data-chart"></canvas>
+                        <div id="frameIndicator" class="frame-indicator"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="issues-section">
+                <h3 class="card-title">问题诊断</h3>
+                <div id="issuesList" class="issues-list">
+                    <div class="no-issues">
+                        <p>暂无分析结果</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="suggestions-section">
+                <h3 class="card-title">💡 修正建议</h3>
+                <div id="suggestionsList" class="suggestions-list">
+                    <p class="no-suggestions">暂无建议</p>
+                </div>
+            </div>
+
+            <div id="compareResults" class="compare-section" style="display: none;">
+                <h3 class="card-title">🔄 双视频对比分析</h3>
+                <div class="compare-grid">
+                    <div class="compare-card standard">
+                        <h4>📹 标准视频</h4>
+                        <div class="compare-score">
+                            <span class="score-value" id="standardScore">--</span>
+                            <span class="score-label">综合评分</span>
+                        </div>
+                        <div class="compare-details">
+                            <div class="detail-item">姿态规范: <span id="standardPosture">--</span></div>
+                            <div class="detail-item">动作连贯: <span id="standardContinuity">--</span></div>
+                            <div class="detail-item">发力合理: <span id="standardPower">--</span></div>
+                            <div class="detail-item">动作完整: <span id="standardCompleteness">--</span></div>
+                        </div>
+                    </div>
+                    <div class="compare-arrow">
+                        <span class="arrow-icon">➡️</span>
+                        <span class="arrow-text">对比</span>
+                        <span class="arrow-icon">⬅️</span>
+                    </div>
+                    <div class="compare-card user">
+                        <h4>🎯 我的视频</h4>
+                        <div class="compare-score">
+                            <span class="score-value" id="userScore">--</span>
+                            <span class="score-label">综合评分</span>
+                        </div>
+                        <div class="compare-details">
+                            <div class="detail-item">姿态规范: <span id="userPosture">--</span></div>
+                            <div class="detail-item">动作连贯: <span id="userContinuity">--</span></div>
+                            <div class="detail-item">发力合理: <span id="userPower">--</span></div>
+                            <div class="detail-item">动作完整: <span id="userCompleteness">--</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="compare-analysis">
+                    <h4>📊 差异分析</h4>
+                    <div id="differenceAnalysis" class="difference-list">
+                        <p>暂无对比数据</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="video-controls">
+            <button id="playPauseBtn" class="control-btn" disabled>
+                <span class="icon-play">▶</span>
+            </button>
+            <div class="progress-container">
+                <input type="range" id="progressBar" class="progress-bar" value="0" min="0" max="100" disabled>
+                <span id="currentTime" class="time-display">00:00</span>
+                <span class="time-separator">/</span>
+                <span id="duration" class="time-display">00:00</span>
+            </div>
+            <div class="volume-control">
+                <button id="muteBtn" class="control-btn" disabled>🔊</button>
+                <input type="range" id="volumeBar" class="volume-bar" value="100" min="0" max="100">
+            </div>
+        </div>
+        <div class="frame-controls">
+            <div class="speed-control">
+                <label for="speedSelect">播放速度:</label>
+                <select id="speedSelect" class="speed-select">
+                    <option value="0.25">0.25x</option>
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+            <div class="frame-nav">
+                <button id="prevFrameBtn" class="control-btn" disabled>⏮ 上一帧</button>
+                <button id="nextFrameBtn" class="control-btn" disabled>下一帧 ⏭</button>
+                <button id="captureFrameBtn" class="control-btn" disabled>📷 截图</button>
+                <button id="markKeyFrameBtn" class="control-btn" disabled>⭐ 标记关键帧</button>
+            </div>
+            <div class="export-options">
+                <button id="exportPDFBtn" class="control-btn" disabled>📄 导出PDF</button>
+                <button id="exportTextBtn" class="control-btn" disabled>📝 导出文本</button>
+            </div>
+        </div>
+    </footer>
+
+    <div id="imageModal" class="image-modal">
+        <div class="modal-overlay" onclick="closeImageModal()"></div>
+        <div class="modal-content-image">
+            <span class="close-btn" onclick="closeImageModal()">&times;</span>
+            <img id="modalImage" src="" alt="问题截图">
+            <div id="modalCaption" class="modal-caption"></div>
+        </div>
+    </div>
+
+    <div id="firstTimeGuide" class="modal">
+        <div class="modal-content">
+            <h2>欢迎使用乒乓球AI动作分析助手</h2>
+            <div class="guide-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">上传乒乓球运动视频或开启摄像头</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">点击"分析动作"开始AI分析</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">查看详细的动作评分和改进建议</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">导出分析报告用于训练参考</div>
+                </div>
+            </div>
+            <button id="closeGuideBtn" class="btn btn-primary">开始使用</button>
+        </div>
+    </div>
+
+    <div id="angleGuideModal" class="modal">
+        <div class="modal-content modal-wide">
+            <button class="close-btn-modal" onclick="closeAngleGuideModal()">&times;</button>
+            <h2>📚 关节角度技术说明</h2>
+            
+            <div class="angle-guide-container">
+                <div class="angle-guide-section elbow-section">
+                    <div class="angle-guide-header">
+                        <span class="angle-icon">🦾</span>
+                        <h3>肘部角度</h3>
+                        <span class="angle-color" style="background: #00BFFF;"></span>
+                    </div>
+                    <div class="angle-guide-content">
+                        <div class="angle-definition">
+                            <strong>角度定义：</strong>由肩部、肘部、腕部三个关键点构成的夹角
+                        </div>
+                        <div class="angle-formula">
+                            <strong>计算公式：</strong>∠(肩部 → 肘部 → 腕部)
+                        </div>
+                        <div class="angle-standard">
+                            <strong>标准范围：</strong>
+                            <table class="standard-table">
+                                <tr><th>动作类型</th><th>标准范围</th><th>最佳角度</th></tr>
+                                <tr><td>正手攻球</td><td>70° - 110°</td><td>90°</td></tr>
+                                <tr><td>反手攻球</td><td>60° - 90°</td><td>75°</td></tr>
+                                <tr><td>拉球</td><td>80° - 120°</td><td>100°</td></tr>
+                                <tr><td>发球</td><td>75° - 115°</td><td>95°</td></tr>
+                            </table>
+                        </div>
+                        <div class="angle-technique">
+                            <strong>技术含义：</strong>
+                            <ul>
+                                <li>肘部角度直接影响发力效率和击球稳定性</li>
+                                <li>角度过小：导致动作僵硬，难以发力</li>
+                                <li>角度过大：力量分散，控球能力下降</li>
+                                <li>理想角度：形成稳定的发力杠杆</li>
+                            </ul>
+                        </div>
+                        <div class="angle-issues">
+                            <strong>常见问题：</strong>
+                            <ul>
+                                <li><span class="issue-severity severity-high">严重</span> 肘部角度 < 60°："夹臂"现象，影响发力</li>
+                                <li><span class="issue-severity severity-medium">中等</span> 肘部角度 > 130°：手臂伸直，难以控制</li>
+                                <li><span class="issue-severity severity-low">轻微</span> 肘部外展过大：动作不紧凑</li>
+                            </ul>
+                        </div>
+                        <div class="angle-tips">
+                            <strong>训练建议：</strong>练习时注意肘部与身体保持约一拳距离，保持放松但稳定的状态
+                        </div>
+                    </div>
+                </div>
+
+                <div class="angle-guide-section shoulder-section">
+                    <div class="angle-guide-header">
+                        <span class="angle-icon">💪</span>
+                        <h3>肩部角度</h3>
+                        <span class="angle-color" style="background: #FF6B6B;"></span>
+                    </div>
+                    <div class="angle-guide-content">
+                        <div class="angle-definition">
+                            <strong>角度定义：</strong>由肘部、肩部、髋部三个关键点构成的夹角
+                        </div>
+                        <div class="angle-formula">
+                            <strong>计算公式：</strong>∠(肘部 → 肩部 → 髋部)
+                        </div>
+                        <div class="angle-standard">
+                            <strong>标准范围：</strong>
+                            <table class="standard-table">
+                                <tr><th>动作类型</th><th>标准范围</th><th>最佳角度</th></tr>
+                                <tr><td>正手攻球</td><td>30° - 60°</td><td>45°</td></tr>
+                                <tr><td>反手攻球</td><td>20° - 50°</td><td>35°</td></tr>
+                                <tr><td>拉球</td><td>40° - 70°</td><td>55°</td></tr>
+                                <tr><td>发球</td><td>35° - 65°</td><td>50°</td></tr>
+                            </table>
+                        </div>
+                        <div class="angle-technique">
+                            <strong>技术含义：</strong>
+                            <ul>
+                                <li>肩部角度反映转体幅度和大臂运用情况</li>
+                                <li>角度过小：转体不足，难以发挥身体力量</li>
+                                <li>角度过大：可能导致动作过大，还原慢</li>
+                                <li>理想角度：充分利用转体发力，保持动作紧凑</li>
+                            </ul>
+                        </div>
+                        <div class="angle-issues">
+                            <strong>常见问题：</strong>
+                            <ul>
+                                <li><span class="issue-severity severity-high">严重</span> 肩部角度 < 15°：转体不足，纯手臂发力</li>
+                                <li><span class="issue-severity severity-medium">中等</span> 肩部角度 > 75°：动作过大，还原慢</li>
+                                <li><span class="issue-severity severity-low">轻微</span> 肩部僵硬：影响动作流畅性</li>
+                            </ul>
+                        </div>
+                        <div class="angle-tips">
+                            <strong>训练建议：</strong>练习转腰发力，体会肩带动大臂的发力顺序
+                        </div>
+                    </div>
+                </div>
+
+                <div class="angle-guide-section wrist-section">
+                    <div class="angle-guide-header">
+                        <span class="angle-icon">🤚</span>
+                        <h3>腕部角度</h3>
+                        <span class="angle-color" style="background: #9370DB;"></span>
+                    </div>
+                    <div class="angle-guide-content">
+                        <div class="angle-definition">
+                            <strong>角度定义：</strong>由肘部、腕部、手部三个关键点构成的夹角
+                        </div>
+                        <div class="angle-formula">
+                            <strong>计算公式：</strong>∠(肘部 → 腕部 → 手部)
+                        </div>
+                        <div class="angle-standard">
+                            <strong>标准范围：</strong>
+                            <table class="standard-table">
+                                <tr><th>动作类型</th><th>标准范围</th><th>最佳角度</th></tr>
+                                <tr><td>正手攻球</td><td>150° - 180°</td><td>165°</td></tr>
+                                <tr><td>反手攻球</td><td>120° - 160°</td><td>140°</td></tr>
+                                <tr><td>挑打</td><td>100° - 140°</td><td>120°</td></tr>
+                                <tr><td>发球</td><td>145° - 180°</td><td>165°</td></tr>
+                            </table>
+                        </div>
+                        <div class="angle-technique">
+                            <strong>技术含义：</strong>
+                            <ul>
+                                <li>腕部角度决定拍形和击球瞬间的发力</li>
+                                <li>角度过小（弯曲）：拍面前倾过大，易下网</li>
+                                <li>角度过大（伸直）：拍面后仰，易出界</li>
+                                <li>理想角度：保持稳定拍形，击球瞬间加速</li>
+                            </ul>
+                        </div>
+                        <div class="angle-issues">
+                            <strong>常见问题：</strong>
+                            <ul>
+                                <li><span class="issue-severity severity-high">严重</span> 腕部角度 < 100°：手腕过度弯曲，难以控制</li>
+                                <li><span class="issue-severity severity-medium">中等</span> 腕部角度 > 180°：手腕反向弯曲，易受伤</li>
+                                <li><span class="issue-severity severity-low">轻微</span> 手腕僵硬：影响控球手感</li>
+                            </ul>
+                        </div>
+                        <div class="angle-tips">
+                            <strong>训练建议：</strong>保持手腕放松，击球瞬间发力，避免提前发力
+                        </div>
+                    </div>
+                </div>
+
+                <div class="angle-guide-section hip-section">
+                    <div class="angle-guide-header">
+                        <span class="angle-icon">🦵</span>
+                        <h3>髋部角度</h3>
+                        <span class="angle-color" style="background: #48bb78;"></span>
+                    </div>
+                    <div class="angle-guide-content">
+                        <div class="angle-definition">
+                            <strong>角度定义：</strong>由对侧髋部、同侧髋部、膝盖三个关键点构成的夹角
+                        </div>
+                        <div class="angle-formula">
+                            <strong>计算公式：</strong>∠(对侧髋 → 同侧髋 → 膝盖)
+                        </div>
+                        <div class="angle-standard">
+                            <strong>标准范围：</strong>
+                            <table class="standard-table">
+                                <tr><th>动作类型</th><th>标准范围</th><th>最佳角度</th></tr>
+                                <tr><td>正手攻球</td><td>80° - 120°</td><td>100°</td></tr>
+                                <tr><td>反手攻球</td><td>70° - 110°</td><td>90°</td></tr>
+                                <tr><td>拉球</td><td>85° - 125°</td><td>105°</td></tr>
+                                <tr><td>削球</td><td>60° - 100°</td><td>80°</td></tr>
+                            </table>
+                        </div>
+                        <div class="angle-technique">
+                            <strong>技术含义：</strong>
+                            <ul>
+                                <li>髋部角度反映身体重心和转体幅度</li>
+                                <li>角度过小：身体过于前倾，重心不稳</li>
+                                <li>角度过大：身体直立，难以发力</li>
+                                <li>理想角度：重心下沉，便于蹬转发力</li>
+                            </ul>
+                        </div>
+                        <div class="angle-issues">
+                            <strong>常见问题：</strong>
+                            <ul>
+                                <li><span class="issue-severity severity-high">严重</span> 髋部角度 < 60°：身体过度前倾，易失去平衡</li>
+                                <li><span class="issue-severity severity-medium">中等</span> 髋部角度 > 130°：身体直立，发力不足</li>
+                                <li><span class="issue-severity severity-low">轻微</span> 髋部不动：仅用手臂发力</li>
+                            </ul>
+                        </div>
+                        <div class="angle-tips">
+                            <strong>训练建议：</strong>练习时注意重心下沉，体会腿部蹬地转腰的发力顺序
+                        </div>
+                    </div>
+                </div>
+
+                <div class="angle-guide-section knee-section">
+                    <div class="angle-guide-header">
+                        <span class="angle-icon">🏋️</span>
+                        <h3>膝部角度</h3>
+                        <span class="angle-color" style="background: #f56565;"></span>
+                    </div>
+                    <div class="angle-guide-content">
+                        <div class="angle-definition">
+                            <strong>角度定义：</strong>由髋部、膝盖、脚踝三个关键点构成的夹角
+                        </div>
+                        <div class="angle-formula">
+                            <strong>计算公式：</strong>∠(髋部 → 膝盖 → 脚踝)
+                        </div>
+                        <div class="angle-standard">
+                            <strong>标准范围：</strong>
+                            <table class="standard-table">
+                                <tr><th>动作类型</th><th>标准范围</th><th>最佳角度</th></tr>
+                                <tr><td>正手攻球</td><td>100° - 140°</td><td>120°</td></tr>
+                                <tr><td>反手攻球</td><td>90° - 130°</td><td>110°</td></tr>
+                                <tr><td>拉球</td><td>80° - 120°</td><td>100°</td></tr>
+                                <tr><td>削球</td><td>80° - 120°</td><td>100°</td></tr>
+                            </table>
+                        </div>
+                        <div class="angle-technique">
+                            <strong>技术含义：</strong>
+                            <ul>
+                                <li>膝部角度反映腿部弯曲程度和发力准备</li>
+                                <li>角度过小：膝盖弯曲过大，移动不便</li>
+                                <li>角度过大：膝盖伸直，难以发力</li>
+                                <li>理想角度：弯曲适度，便于蹬地发力和快速移动</li>
+                            </ul>
+                        </div>
+                        <div class="angle-issues">
+                            <strong>常见问题：</strong>
+                            <ul>
+                                <li><span class="issue-severity severity-high">严重</span> 膝部角度 < 80°：膝盖弯曲过大，易受伤</li>
+                                <li><span class="issue-severity severity-medium">中等</span> 膝部角度 > 150°：膝盖过直，发力不足</li>
+                                <li><span class="issue-severity severity-low">轻微</span> 双膝内扣：影响稳定性</li>
+                            </ul>
+                        </div>
+                        <div class="angle-tips">
+                            <strong>训练建议：</strong>保持双膝微屈，重心在两脚之间，便于快速启动
+                        </div>
+                    </div>
+                </div>
+
+                <div class="angle-guide-section speed-section">
+                    <div class="angle-guide-header">
+                        <span class="angle-icon">⚡</span>
+                        <h3>运动速度</h3>
+                        <span class="angle-color" style="background: #FFD93D;"></span>
+                    </div>
+                    <div class="angle-guide-content">
+                        <div class="angle-definition">
+                            <strong>速度定义：</strong>手腕关键点在相邻帧之间的位移变化率
+                        </div>
+                        <div class="angle-formula">
+                            <strong>计算公式：</strong>速度 = √[(x₂-x₁)² + (y₂-y₁)²] / 时间间隔
+                        </div>
+                        <div class="angle-standard">
+                            <strong>标准范围：</strong>
+                            <table class="standard-table">
+                                <tr><th>速度等级</th><th>数值范围</th><th>对应动作</th></tr>
+                                <tr><td>慢速</td><td>0.01 - 0.05</td><td>搓球、挡球</td></tr>
+                                <tr><td>中速</td><td>0.03 - 0.10</td><td>攻球、拉球</td></tr>
+                                <tr><td>快速</td><td>> 0.08</td><td>发力拉球、爆冲</td></tr>
+                            </table>
+                        </div>
+                        <div class="angle-technique">
+                            <strong>技术含义：</strong>
+                            <ul>
+                                <li>运动速度反映击球力量和动作节奏</li>
+                                <li>速度过小：发力不足，威胁性低</li>
+                                <li>速度过大：可能导致动作失控</li>
+                                <li>理想速度：根据击球需求合理控制</li>
+                            </ul>
+                        </div>
+                        <div class="angle-issues">
+                            <strong>常见问题：</strong>
+                            <ul>
+                                <li><span class="issue-severity severity-high">严重</span> 速度波动 > 50%：动作不连贯</li>
+                                <li><span class="issue-severity severity-medium">中等</span> 峰值速度 < 0.03：发力不足</li>
+                                <li><span class="issue-severity severity-low">轻微</span> 加速时机不当：影响击球质量</li>
+                            </ul>
+                        </div>
+                        <div class="angle-tips">
+                            <strong>训练建议：</strong>练习放松-加速-放松的节奏，击球瞬间达到最大速度
+                        </div>
+                    </div>
+                </div>
+
+                <div class="angle-guide-summary">
+                    <h3>📊 综合分析指南</h3>
+                    <div class="summary-content">
+                        <p><strong>评分权重：</strong></p>
+                        <ul>
+                            <li>姿态规范性：40% - 各关节角度是否符合标准</li>
+                            <li>动作连贯性：30% - 速度变化的平滑程度</li>
+                            <li>发力合理性：20% - 速度峰值和加速度</li>
+                            <li>动作完整性：10% - 动作幅度和帧数</li>
+                        </ul>
+                        <p><strong>改善策略：</strong></p>
+                        <ul>
+                            <li>首先关注高严重性问题（红色标记）</li>
+                            <li>对照标准范围调整各关节角度</li>
+                            <li>通过慢动作练习提高动作连贯性</li>
+                            <li>循序渐进，逐步提高发力质量</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="videoGuide" class="modal">
+        <div class="modal-content modal-wide">
+            <h2>📹 视频拍摄指南</h2>
+            <p class="guide-intro">为获得最佳分析效果，请按照以下建议拍摄视频：</p>
+            
+            <div class="guide-sections">
+                <div class="guide-section">
+                    <h3>📍 拍摄位置</h3>
+                    <div class="guide-points">
+                        <div class="guide-point">
+                            <span class="point-icon">🎯</span>
+                            <span class="point-text">侧面视角：站在运动员侧后方约3-5米处</span>
+                        </div>
+                        <div class="guide-point">
+                            <span class="point-icon">📐</span>
+                            <span class="point-text">45度角：可以同时看到正面和侧面动作</span>
+                        </div>
+                        <div class="guide-point">
+                            <span class="point-icon">📏</span>
+                            <span class="point-text">距离适中：确保全身入镜，画面不拥挤</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-section">
+                    <h3>⚙️ 拍摄设置</h3>
+                    <div class="guide-points">
+                        <div class="guide-point">
+                            <span class="point-icon">📺</span>
+                            <span class="point-text">分辨率：建议1080p或720p</span>
+                        </div>
+                        <div class="guide-point">
+                            <span class="point-icon">🎬</span>
+                            <span class="point-text">帧率：至少30fps</span>
+                        </div>
+                        <div class="guide-point">
+                            <span class="point-icon">⚡</span>
+                            <span class="point-text">模式：开启运动模式以减少模糊</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-section">
+                    <h3>💡 环境要求</h3>
+                    <div class="guide-points">
+                        <div class="guide-point">
+                            <span class="point-icon">☀️</span>
+                            <span class="point-text">光线充足：避免背光和阴影</span>
+                        </div>
+                        <div class="guide-point">
+                            <span class="point-icon">🖼️</span>
+                            <span class="point-text">背景简洁：避免复杂图案干扰</span>
+                        </div>
+                        <div class="guide-point">
+                            <span class="point-icon">👕</span>
+                            <span class="point-text">服装对比：穿着与背景颜色对比明显的衣服</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guide-section">
+                    <h3>🎾 动作要求</h3>
+                    <div class="guide-points">
+                        <div class="guide-point">
+                            <span class="point-icon">🔄</span>
+                            <span class="point-text">完整动作：包含准备、引拍、击球、随挥</span>
+                        </div>
+                        <div class="guide-point">
+                            <span class="point-icon">⏱️</span>
+                            <span class="point-text">时长：每个动作保持3-5秒</span>
+                        </div>
+                        <div class="guide-point">
+                            <span class="point-icon">👀</span>
+                            <span class="point-text">全身可见：确保头部到脚部都在画面中</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="guide-buttons">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="rememberGuide">
+                    <span>下次不再显示</span>
+                </label>
+                <button id="skipVideoGuide" class="btn btn-secondary">跳过</button>
+                <button id="confirmVideoGuide" class="btn btn-primary">我知道了，上传视频</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="app.js"></script>
+    <script>
+        function openImageModal(imageSrc, caption) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImage');
+            const captionEl = document.getElementById('modalCaption');
+            
+            img.src = imageSrc;
+            captionEl.textContent = caption;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        function openAngleGuideModal() {
+            const modal = document.getElementById('angleGuideModal');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAngleGuideModal() {
+            const modal = document.getElementById('angleGuideModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeImageModal();
+                closeAngleGuideModal();
+            }
+        });
+
+        document.getElementById('showAngleGuideBtn').addEventListener('click', openAngleGuideModal);
+    </script>
+</body>
+</html>
