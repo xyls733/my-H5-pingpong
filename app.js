@@ -36,7 +36,6 @@ class TableTennisAnalyzer {
         this.setupEventListeners();
         this.setupMediaPipe();
         this.setupChartZoomControls();
-        this.checkFirstTimeUser();
     }
 
     async loadStandardActions() {
@@ -195,25 +194,20 @@ class TableTennisAnalyzer {
     }
 
     setupEventListeners() {
-        document.getElementById('uploadBtn').addEventListener('click', () => {
-            this.showVideoGuide();
-        });
-
+        // 文件上传使用 label 标签绑定，不需要点击事件
+        
         document.getElementById('videoInput').addEventListener('change', (e) => {
             this.handleVideoUpload(e.target.files[0]);
-        });
-
-        document.getElementById('uploadStandardBtn').addEventListener('click', () => {
-            document.getElementById('standardVideoInput').click();
         });
 
         document.getElementById('standardVideoInput').addEventListener('change', (e) => {
             this.handleStandardVideoUpload(e.target.files[0]);
         });
 
-        document.getElementById('cameraBtn').addEventListener('click', () => {
-            this.startCamera();
-        });
+        // 移除摄像功能
+        // document.getElementById('cameraBtn').addEventListener('click', () => {
+        //     this.startCamera();
+        // });
 
         document.getElementById('analyzeBtn').addEventListener('click', () => {
             // 如果有标准视频，则进行对比分析，否则只分析用户视频
@@ -240,13 +234,7 @@ class TableTennisAnalyzer {
             this.seekTo(e.target.value);
         });
 
-        document.getElementById('muteBtn').addEventListener('click', () => {
-            this.toggleMute();
-        });
-
-        document.getElementById('volumeBar').addEventListener('input', (e) => {
-            this.setVolume(e.target.value);
-        });
+        // document.getElementById('muteBtn') 和 document.getElementById('volumeBar') 元素已移除，跳过设置
 
         document.getElementById('speedSelect').addEventListener('change', (e) => {
             this.setPlaybackSpeed(e.target.value);
@@ -268,25 +256,14 @@ class TableTennisAnalyzer {
             this.markKeyFrame();
         });
 
-        document.getElementById('exportPDFBtn').addEventListener('click', () => {
-            this.exportPDF();
-        });
+        // 移除不存在的导出按钮事件监听
+        // document.getElementById('exportPDFBtn').addEventListener('click', () => {
+        //     this.exportPDF();
+        // });
 
-        document.getElementById('exportTextBtn').addEventListener('click', () => {
-            this.exportText();
-        });
-
-        document.getElementById('closeGuideBtn').addEventListener('click', () => {
-            this.closeGuide();
-        });
-
-        document.getElementById('confirmVideoGuide').addEventListener('click', () => {
-            this.confirmVideoGuide();
-        });
-
-        document.getElementById('skipVideoGuide').addEventListener('click', () => {
-            this.skipVideoGuide();
-        });
+        // document.getElementById('exportTextBtn').addEventListener('click', () => {
+        //     this.exportText();
+        // });
 
         document.getElementById('actionTypeSelect').addEventListener('change', () => {
             this.checkAnalysisReady();
@@ -318,8 +295,48 @@ class TableTennisAnalyzer {
             this.updateProgress();
         });
 
+        this.video.addEventListener('play', () => {
+            this.togglePlayButton(false, false);
+        });
+
+        this.video.addEventListener('pause', () => {
+            this.togglePlayButton(true, false);
+        });
+
         this.video.addEventListener('ended', () => {
             this.onVideoEnded();
+            this.togglePlayButton(true, false);
+        });
+
+        // 标准视频事件监听
+        this.standardVideo.addEventListener('play', () => {
+            this.togglePlayButton(false, true);
+        });
+
+        this.standardVideo.addEventListener('pause', () => {
+            this.togglePlayButton(true, true);
+        });
+
+        this.standardVideo.addEventListener('ended', () => {
+            this.togglePlayButton(true, true);
+        });
+
+        // 用户视频播放按钮点击事件
+        document.getElementById('userPlayPauseBtn').addEventListener('click', () => {
+            if (this.video.paused) {
+                this.video.play();
+            } else {
+                this.video.pause();
+            }
+        });
+
+        // 标准视频播放按钮点击事件
+        document.getElementById('standardPlayPauseBtn').addEventListener('click', () => {
+            if (this.standardVideo.paused) {
+                this.standardVideo.play();
+            } else {
+                this.standardVideo.pause();
+            }
         });
     }
 
@@ -457,6 +474,14 @@ class TableTennisAnalyzer {
         }
     }
 
+    togglePlayButton(show, isStandard = false) {
+        const btnId = isStandard ? 'standardPlayPauseBtn' : 'userPlayPauseBtn';
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.style.display = show ? 'flex' : 'none';
+        }
+    }
+
     onFullscreenChange() {
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         const standardFullscreenBtn = document.getElementById('standardFullscreenBtn');
@@ -496,11 +521,6 @@ class TableTennisAnalyzer {
         this.trajectory = [];
         document.getElementById('analyzeBtn').textContent = '停止分析';
         document.getElementById('loadingOverlay').classList.add('active');
-
-        console.log('开始分析，动作类型:', actionType);
-        console.log('是否有摄像头:', !!this.camera);
-        console.log('视频时长:', this.video?.duration);
-        console.log('MediaPipe实例:', !!this.pose);
 
         if (!this.camera) {
             await this.processVideo();
@@ -910,13 +930,22 @@ class TableTennisAnalyzer {
     }
 
     async processVideo() {
+        // 确保MediaPipe已经初始化
+        if (!this.pose) {
+            console.warn('MediaPipe尚未初始化，正在初始化...');
+            try {
+                this.setupMediaPipe();
+            } catch (error) {
+                console.error('MediaPipe初始化失败:', error);
+                throw new Error('无法初始化MediaPipe，请检查网络连接');
+            }
+        }
+
         const video = this.video;
         const duration = video.duration;
         const fps = this.fps;
         const totalFrames = Math.floor(duration * fps);
         this.totalFrames = totalFrames;
-
-        console.log('processVideo开始，总帧数:', totalFrames);
 
         for (let frame = 0; frame < totalFrames; frame++) {
             if (!this.isAnalyzing) break;
@@ -940,8 +969,6 @@ class TableTennisAnalyzer {
             
             await this.delay(Math.max(33, 1000 / fps));
         }
-
-        console.log('processVideo结束，收集到的poseResults数量:', this.poseResults.length);
 
         if (this.isAnalyzing) {
             this.updateProgressBar(100, '分析完成', false);
@@ -980,10 +1007,7 @@ class TableTennisAnalyzer {
     }
 
     onPoseResults(results) {
-        console.log('onPoseResults被调用，results:', !!results);
-        
         if (!results) {
-            console.log('没有检测到results');
             return;
         }
 
@@ -995,10 +1019,7 @@ class TableTennisAnalyzer {
             landmarksList = [results.poseLandmarks];
         }
         
-        console.log('检测到的人数:', landmarksList.length);
-        
         if (landmarksList.length === 0) {
-            console.log('没有检测到任何人');
             return;
         }
 
@@ -2424,7 +2445,7 @@ class TableTennisAnalyzer {
         const actionSelect = document.getElementById('actionTypeSelect');
         actionSelect.value = actionType.type;
         
-        document.getElementById('confidence').textContent = `${confidence}%`;
+        // document.getElementById('confidence') 元素已移除，跳过设置
 
         document.getElementById('totalScore').textContent = scores.total;
         document.getElementById('scoreLevel').textContent = this.getScoreLevel(scores.total);
@@ -2588,6 +2609,35 @@ class TableTennisAnalyzer {
         // 绘制标准视频曲线（红色）
         if (standardData && standardData.length > 0) {
             this.drawChartLine(ctx, standardData, minVal, maxVal, range, padding, chartWidth, chartHeight, '#fc8181', '标准');
+        }
+
+        // 绘制X轴
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.moveTo(padding.left, height - padding.bottom);
+        ctx.lineTo(width - padding.right, height - padding.bottom);
+        ctx.stroke();
+
+        // X轴标签
+        ctx.font = '10px Arial';
+        ctx.fillStyle = '#718096';
+        ctx.textAlign = 'center';
+        ctx.fillText('帧数', width / 2, height - 10);
+
+        // X轴刻度
+        const totalFrames = userData.length;
+        const step = Math.max(1, Math.floor(totalFrames / 5));
+        for (let i = 0; i <= totalFrames; i += step) {
+            const x = padding.left + (i / totalFrames) * chartWidth;
+            ctx.beginPath();
+            ctx.moveTo(x, height - padding.bottom);
+            ctx.lineTo(x, height - padding.bottom + 5);
+            ctx.stroke();
+            
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#718096';
+            ctx.textAlign = 'center';
+            ctx.fillText(i.toString(), x, height - padding.bottom + 18);
         }
 
         // 更新图例
@@ -2927,49 +2977,91 @@ class TableTennisAnalyzer {
             actionSelect.value = '';
         }
         
-        document.getElementById('confidence').textContent = '--';
-        document.getElementById('totalScore').textContent = '--';
-        document.getElementById('scoreLevel').textContent = '--';
+        const confidenceEl = document.getElementById('confidence');
+        if (confidenceEl) {
+            confidenceEl.textContent = '--';
+        }
+        
+        const totalScoreEl = document.getElementById('totalScore');
+        if (totalScoreEl) {
+            totalScoreEl.textContent = '--';
+        }
+        
+        const scoreLevelEl = document.getElementById('scoreLevel');
+        if (scoreLevelEl) {
+            scoreLevelEl.textContent = '--';
+        }
 
         ['posture', 'continuity', 'power', 'completeness'].forEach(type => {
-            document.getElementById(`${type}Score`).style.width = '0%';
-            document.getElementById(`${type}Value`).textContent = '--';
+            const scoreEl = document.getElementById(`${type}Score`);
+            const valueEl = document.getElementById(`${type}Value`);
+            if (scoreEl) {
+                scoreEl.style.width = '0%';
+            }
+            if (valueEl) {
+                valueEl.textContent = '--';
+            }
         });
 
-        document.getElementById('issuesList').innerHTML = '<div class="no-issues"><p>暂无分析结果</p></div>';
-        document.getElementById('suggestionsList').innerHTML = '<p class="no-suggestions">暂无建议</p>';
+        const issuesListEl = document.getElementById('issuesList');
+        if (issuesListEl) {
+            issuesListEl.innerHTML = '<div class="no-issues"><p>暂无分析结果</p></div>';
+        }
+        
+        const suggestionsListEl = document.getElementById('suggestionsList');
+        if (suggestionsListEl) {
+            suggestionsListEl.innerHTML = '<p class="no-suggestions">暂无建议</p>';
+        }
 
-        document.getElementById('exportBtn').disabled = true;
-        document.getElementById('exportVideoBtn').disabled = true;
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.disabled = true;
+        }
+        
+        const exportVideoBtn = document.getElementById('exportVideoBtn');
+        if (exportVideoBtn) {
+            exportVideoBtn.disabled = true;
+        }
     }
 
     enableControls() {
         const controls = [
-            'playPauseBtn', 'progressBar', 'muteBtn', 'volumeBar',
+            'playPauseBtn', 'progressBar',
             'prevFrameBtn', 'nextFrameBtn', 'captureFrameBtn', 'markKeyFrameBtn'
         ];
 
         controls.forEach(id => {
-            document.getElementById(id).disabled = false;
+            const element = document.getElementById(id);
+            if (element) {
+                element.disabled = false;
+            }
         });
         
         this.checkAnalysisReady();
     }
 
     togglePlayPause() {
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        if (!playPauseBtn) return;
+        
         if (this.video.paused) {
             this.video.play();
-            document.getElementById('playPauseBtn').innerHTML = '<span class="icon-pause">⏸</span>';
+            playPauseBtn.innerHTML = '<span class="icon-pause">⏸</span>';
         } else {
             this.video.pause();
-            document.getElementById('playPauseBtn').innerHTML = '<span class="icon-play">▶</span>';
+            playPauseBtn.innerHTML = '<span class="icon-play">▶</span>';
         }
     }
 
     updateProgress() {
+        const progressBar = document.getElementById('progressBar');
+        const currentTimeEl = document.getElementById('currentTime');
+        
+        if (!progressBar || !currentTimeEl) return;
+        
         const progress = (this.video.currentTime / this.video.duration) * 100;
-        document.getElementById('progressBar').value = progress;
-        document.getElementById('currentTime').textContent = this.formatTime(this.video.currentTime);
+        progressBar.value = progress;
+        currentTimeEl.textContent = this.formatTime(this.video.currentTime);
         
         // 更新图表帧指示线
         this.updateFrameIndicator();
@@ -3000,7 +3092,7 @@ class TableTennisAnalyzer {
 
     toggleMute() {
         this.video.muted = !this.video.muted;
-        document.getElementById('muteBtn').textContent = this.video.muted ? '🔇' : '🔊';
+        // document.getElementById('muteBtn') 元素已移除，跳过更新
     }
 
     setVolume(value) {
@@ -3927,42 +4019,6 @@ class TableTennisAnalyzer {
 </html>`;
     }
 
-    checkFirstTimeUser() {
-        const hasVisited = localStorage.getItem('tableTennisAnalyzer_visited');
-        if (!hasVisited) {
-            document.getElementById('firstTimeGuide').classList.add('active');
-        }
-    }
-
-    closeGuide() {
-        document.getElementById('firstTimeGuide').classList.remove('active');
-        localStorage.setItem('tableTennisAnalyzer_visited', 'true');
-    }
-
-    showVideoGuide() {
-        const skipGuide = localStorage.getItem('tableTennisAnalyzer_skipVideoGuide');
-        if (!skipGuide) {
-            document.getElementById('videoGuide').classList.add('active');
-        } else {
-            this.triggerFileInput();
-        }
-    }
-
-    confirmVideoGuide() {
-        document.getElementById('videoGuide').classList.remove('active');
-        
-        if (document.getElementById('rememberGuide').checked) {
-            localStorage.setItem('tableTennisAnalyzer_skipVideoGuide', 'true');
-        }
-        
-        this.triggerFileInput();
-    }
-
-    skipVideoGuide() {
-        document.getElementById('videoGuide').classList.remove('active');
-        this.triggerFileInput();
-    }
-
     triggerFileInput() {
         document.getElementById('videoInput').click();
     }
@@ -4146,6 +4202,32 @@ class TableTennisAnalyzer {
             followThrough: '#667eea'
         };
         return colors[phaseName] || '#718096';
+    }
+}
+
+function openImageModal(imageSrc, title) {
+    // 创建弹窗容器
+    const modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="closeImageModal()"></div>
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeImageModal()">&times;</span>
+            <h3 class="modal-title">${title}</h3>
+            <img src="${imageSrc}" class="modal-image" alt="${title}">
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.classList.add('show');
+}
+
+function closeImageModal() {
+    const modal = document.querySelector('.image-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            document.body.removeChild(modal);
+        }, 300);
     }
 }
 
